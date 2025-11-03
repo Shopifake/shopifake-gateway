@@ -2,10 +2,12 @@ package com.shopifake.microservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import com.shopifake.microservice.annotation.Generated;
 
 /**
- * Main application class for the Spring Boot template.
+ * Main application class for the Shopifake API Gateway.
+ * Uses Spring Cloud Gateway with WebFlux for reactive, non-blocking request routing.
  */
 @SpringBootApplication
 public class Application {
