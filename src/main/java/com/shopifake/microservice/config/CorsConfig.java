@@ -1,59 +1,72 @@
 package com.shopifake.microservice.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+import lombok.Data;
 
 /**
- * CORS configuration for the application.
- * Allows cross-origin requests based on the active profile.
+ * CORS Configuration for Spring Cloud Gateway.
+ * This configuration is profile-aware and reads CORS settings from application-{profile}.yml
  */
 @Configuration
-public class CorsConfig implements WebMvcConfigurer {
+@ConfigurationProperties(prefix = "cors")
+@Data
+public class CorsConfig {
 
-    /**
-     * Maximum age for CORS preflight cache in seconds.
-     */
-    private static final long CORS_MAX_AGE = 3600;
-
-    /**
-     * Allowed origins for CORS.
-     */
-    @Value("${cors.allowed-origins:*}")
     private String allowedOrigins;
-
-    /**
-     * Allowed HTTP methods for CORS.
-     */
-    @Value("${cors.allowed-methods:GET,POST,PUT,DELETE,PATCH,OPTIONS}")
     private String allowedMethods;
-
-    /**
-     * Allowed headers for CORS.
-     */
-    @Value("${cors.allowed-headers:*}")
     private String allowedHeaders;
+    private Boolean allowCredentials;
 
-    /**
-     * Whether credentials are allowed in CORS requests.
-     */
-    @Value("${cors.allow-credentials:false}")
-    private boolean allowCredentials;
+    @Bean
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
 
-    /**
-     * Configure CORS mappings.
-     *
-     * @param registry the CORS registry
-     */
-    @Override
-    public void addCorsMappings(final CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins.split(","))
-                .allowedMethods(allowedMethods.split(","))
-                .allowedHeaders(allowedHeaders.split(","))
-                .allowCredentials(allowCredentials)
-                .maxAge(CORS_MAX_AGE);
+        // Parse allowed origins
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            if ("*".equals(allowedOrigins.trim())) {
+                corsConfig.addAllowedOriginPattern("*");
+            } else {
+                List<String> origins = Arrays.asList(allowedOrigins.split(","));
+                origins.forEach(origin -> corsConfig.addAllowedOriginPattern(origin.trim()));
+            }
+        }
+
+        // Parse allowed methods
+        if (allowedMethods != null && !allowedMethods.isEmpty()) {
+            List<String> methods = Arrays.asList(allowedMethods.split(","));
+            methods.forEach(method -> corsConfig.addAllowedMethod(method.trim()));
+        }
+
+        // Parse allowed headers
+        if (allowedHeaders != null && !allowedHeaders.isEmpty()) {
+            if ("*".equals(allowedHeaders.trim())) {
+                corsConfig.addAllowedHeader("*");
+            } else {
+                List<String> headers = Arrays.asList(allowedHeaders.split(","));
+                headers.forEach(header -> corsConfig.addAllowedHeader(header.trim()));
+            }
+        }
+
+        // Set allow credentials
+        if (allowCredentials != null) {
+            corsConfig.setAllowCredentials(allowCredentials);
+        }
+
+        // Max age for preflight requests
+        corsConfig.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfig);
+
+        return new CorsWebFilter(source);
     }
 }
-

@@ -1,2 +1,0 @@
--- Initial migration: database schema creation
--- This file serves as a starting point for Flyway migrations

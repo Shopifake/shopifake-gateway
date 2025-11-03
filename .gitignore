@@ -44,9 +44,4 @@ jacoco.exec
 **/.env.properties
 !**/*.template
 
-# Database
-*.db
-*.sqlite
-*.h2.db
-
 src/main/resources/env.dev.properties
