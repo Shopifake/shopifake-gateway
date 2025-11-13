@@ -106,6 +106,16 @@ env:
     value: "false"
 ```
 
+## Istio Integration
+
+The accompanying Helm chart now provisions an Istio `Gateway` and `VirtualService` so the API gateway is exposed through the mesh. By default the chart:
+
+- Publishes the host `shopifake.local` on the Istio ingress gateway
+- Routes `/service-a` and `/service-b` through to the corresponding cluster services (path prefix is stripped)
+- Falls back to the Spring Cloud Gateway service for all other traffic, keeping A/B testing support when enabled
+
+You can adjust the host, selector, or backend routes in `shopifake-gateway-chart/values.yaml` to fit your environment.
+
 ## Development
 
 ### Commands

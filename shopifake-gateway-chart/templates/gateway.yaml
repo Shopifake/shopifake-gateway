@@ -1,0 +1,18 @@
+{{- if .Values.gateway.enabled }}
+{{- $fullName := include "shopifake-gateway-chart.fullname" . }}
+{{- $selector := default (dict "istio" "ingressgateway") .Values.gateway.selector }}
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ $fullName }}
+spec:
+  selector:
+{{ toYaml $selector | indent 4 }}
+  servers:
+    - port:
+        number: {{ .Values.gateway.port.number | default 80 }}
+        name: {{ .Values.gateway.port.name | default "http" }}
+        protocol: {{ .Values.gateway.port.protocol | default "HTTP" }}
+      hosts:
+        - {{ .Values.gateway.host | quote }}
+{{- end }}
