@@ -1,177 +1,230 @@
 # Shopifake Gateway
 
-The API Gateway for the Shopifake microservices architecture. Routes requests to backend services with built-in CORS policy, health monitoring, and API documentation.
+The API Gateway for the Shopifake microservices architecture. Routes requests to backend services using Istio Gateway and VirtualService resources.
 
 ## Features
 
-- **Spring Boot 3.5.6** with Java 21
-- **Spring Cloud Gateway** for API routing
-- **Profile-aware CORS policy** (see [CORS Documentation](docs/CORS-CONFIGURATION.md))
-- **Actuator** for health monitoring
-- **Swagger/OpenAPI** for API documentation
-- **Lombok** for cleaner code
-- **GitHub Actions** CI/CD with Test, Checkstyle, JaCoCo
-- **Multi-stage Docker** build
-- **DevContainer** ready for DevPod / VS Code Remote / Cursor (works locally with IntelliJ too)
+- **Istio Gateway** for ingress traffic management
+- **VirtualService** for intelligent routing to backend services
+- **Path-based routing** to multiple microservices
+- **Helm chart** for easy deployment and configuration
+- **Namespace-agnostic** configuration
+
+## Architecture
+
+The gateway uses Istio's Gateway and VirtualService resources to route incoming traffic to the appropriate backend services:
+
+- **Gateway**: Exposes the service mesh to external traffic via the Istio ingress gateway
+- **VirtualService**: Defines routing rules that match request paths and forward them to the correct backend service
 
 ## Quick Start
 
-> 💡 **DevContainer:** This template works with DevPod / VS Code Remote Containers - clone this template and create workspace from Git.
+### 1. Prerequisites
 
-### 1. Clone and Setup
+- Kubernetes cluster with Istio installed
+- Istio ingress gateway running with the appropriate label selector
+- Helm 3.x installed
 
-```bash
-git clone <this-repo>
-cd shopifake-gateway
-```
+### 2. Configure Routes
 
-### 2. Customize
+Edit `shopifake-gateway-chart/values.yaml` to configure your routes:
 
-- Update `pom.xml`: `groupId`, `artifactId`, `name`, `description`
-- Rename package from `com.shopifake.microservice` to your own
-
-### 3. Run
-
-```bash
-./mvnw spring-boot:run
-```
-
-### 4. Access
-
-- Health: `http://localhost:8080/actuator/health`
-- Swagger: `http://localhost:8080/swagger-ui.html`
-
-## Environment Profiles
-
-| Profile | CORS | Logging | Use Case |
-|---------|------|---------|----------|
-| **dev** | Permissive (`*`) | DEBUG | Local development |
-| **test** | Permissive (`*`) | WARN | Unit/Integration tests |
-| **prod** | Strict (configured origins) | WARN | Production |
-
-### CORS Configuration
-
-The gateway uses a **profile-aware CORS policy** that adapts to each environment:
-
-**Development (`dev` profile):**
-- Allows all origins (`*`)
-- Allows all headers
-- No credentials required
-- Perfect for local testing with any frontend
-
-**Test (`test` profile):**
-- Same permissive policy as dev
-- Allows integration tests from any origin
-
-**Production (`prod` profile):**
-- **Strict origin control** via `CORS_ALLOWED_ORIGINS` env var
-- Supports single or multiple origins (comma-separated)
-- Limited headers: `Authorization`, `Content-Type`
-- Credentials support configurable via `CORS_ALLOW_CREDENTIALS`
-
-Example production values:
 ```yaml
-# Single origin
-CORS_ALLOWED_ORIGINS=https://app.example.com
+gateway:
+  enabled: true
+  host: "*"  # or specific hostname
+  port:
+    number: 80
+    name: http
+    protocol: HTTP
+  selector:
+    istio: ingress  # matches your Istio ingress gateway pod labels
+  routes:
+    - name: shopifake-access
+      match:
+        - uri:
+            prefix: /access
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-access
+        port: 8080
+    # ... more routes
+```
 
-# Multiple origins
-CORS_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com,https://mobile.example.com
+### 3. Deploy
 
-# Allow credentials (cookies, auth headers)
-CORS_ALLOW_CREDENTIALS=true
+```bash
+helm install shopifake-gateway ./shopifake-gateway-chart \
+  --namespace <your-namespace>
+```
+
+### 4. Verify
+
+```bash
+# Check Gateway
+kubectl get gateway -n <your-namespace>
+
+# Check VirtualService
+kubectl get virtualservice -n <your-namespace>
+
+# Test routing
+curl http://<istio-ingress-ip>/access/...
 ```
 
 ## Configuration
 
-### Environment Configuration
+### Gateway Configuration
 
-**Local Development:**
-- No additional configuration required
-- Gateway runs on port 8080 by default
+The gateway is configured in `shopifake-gateway-chart/values.yaml`:
 
-**Production:**
-- Environment variables injected via Kubernetes
-
-### Key Variables
-
-**Production/Staging (Kubernetes):**
 ```yaml
-# Example ConfigMap
-env:
-  - name: PORT
-    value: "8080"
-  - name: CORS_ALLOWED_ORIGINS
-    value: "https://prod-app.example.com"
-  - name: CORS_ALLOW_CREDENTIALS
-    value: "false"
+gateway:
+  enabled: true
+  host: "*"                    # Accept all hosts (or specific hostname)
+  port:
+    number: 80                  # Port exposed by Istio ingress
+    name: http
+    protocol: HTTP
+  selector:
+    istio: ingress              # Must match your Istio ingress gateway pod labels
+  routes:
+    - name: service-name
+      match:
+        - uri:
+            prefix: /path       # Path prefix to match
+      rewrite:
+        uri: /                  # Rewrite path before forwarding
+      destination:
+        host: service-name      # Kubernetes service name
+        port: 8080              # Service port
 ```
 
-## Istio Integration
+### Route Configuration
 
-The accompanying Helm chart now provisions an Istio `Gateway` and `VirtualService` so the API gateway is exposed through the mesh. By default the chart:
+Each route defines:
+- **match**: URI patterns to match (e.g., `/access`, `/catalog`)
+- **rewrite**: Optional URI rewriting (strips prefix before forwarding)
+- **destination**: Target service and port
 
-- Publishes the host `shopifake.local` on the Istio ingress gateway
-- Routes `/service-a` and `/service-b` through to the corresponding cluster services (path prefix is stripped)
-- Falls back to the Spring Cloud Gateway service for all other traffic, keeping A/B testing support when enabled
+### Default Route
 
-You can adjust the host, selector, or backend routes in `shopifake-gateway-chart/values.yaml` to fit your environment.
+Unmatched requests can optionally be routed to a gateway service by enabling `gateway.defaultRoute.enabled` in values.yaml. By default, unmatched requests will return 404.
 
-## Development
+## Service Routing
 
-### Commands
+The gateway routes requests to the following services:
 
-```bash
-# Run with profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+- `/access` → `shopifake-access:8080`
+- `/audit` → `shopifake-audit:8080`
+- `/catalog` → `shopifake-catalog:8080`
+- `/chatbot` → `shopifake-chatbot:8080`
+- `/customers` → `shopifake-customers:8080`
+- `/inventory` → `shopifake-inventory:8080`
+- `/orders` → `shopifake-orders:8080`
+- `/pricing` → `shopifake-pricing:8080`
+- `/recommender` → `shopifake-recommender:8080`
+- `/sales-dashboard` → `shopifake-sales-dashboard:8080`
+- `/sites` → `shopifake-sites:8080`
 
-# Run tests
-./mvnw test
+## Requirements
 
-# Build
-./mvnw clean package
+### Backend Services
 
-# Code quality
-./mvnw checkstyle:check
-./mvnw jacoco:report
+All backend services must:
+- Be deployed in the same namespace (or use FQDN format: `service.namespace.svc.cluster.local`)
+- Expose port 8080 (or update the port in route configuration)
+- Have matching Kubernetes service names
+
+### Istio Setup
+
+- Istio must be installed in your cluster
+- Istio ingress gateway must be running
+- The gateway selector must match your ingress gateway pod labels (default: `istio: ingress`)
+
+## Advanced Configuration
+
+### A/B Testing
+
+Enable A/B testing by configuring traffic splitting:
+
+```yaml
+abTesting:
+  enabled: true
+  v1Weight: 80
+  v2Weight: 20
 ```
 
-## Docker
+This requires a DestinationRule with subsets (automatically created when enabled).
 
-### Build & Run
+### Custom Selectors
 
-```bash
-docker build -t shopifake-gateway .
+If your Istio ingress gateway uses different labels:
 
-docker run -p 8080:8080 \
-  -e CORS_ALLOWED_ORIGINS=https://app.example.com \
-  shopifake-gateway
+```yaml
+gateway:
+  selector:
+    istio: ingressgateway  # or your custom labels
 ```
 
-## CI/CD
+### Cross-Namespace Routing
 
-### Pipeline Includes
+To route to services in different namespaces, use FQDN format:
 
-- ✅ Linting (Checkstyle)
-- ✅ Testing with coverage (JaCoCo)
-- ✅ Maven build
-- ✅ Docker build & push to GitHub Container Registry
+```yaml
+destination:
+  host: shopifake-access.other-namespace.svc.cluster.local
+  port: 8080
+```
 
-### Setup
+## Troubleshooting
 
-1. **Settings → Actions → General**
-2. Enable **"Read and write permissions"**
+### Routes Not Working
+
+1. Verify Istio Gateway is created:
+   ```bash
+   kubectl get gateway -n <namespace>
+   ```
+
+2. Check VirtualService configuration:
+   ```bash
+   kubectl get virtualservice -n <namespace> -o yaml
+   ```
+
+3. Verify backend services exist:
+   ```bash
+   kubectl get svc -n <namespace>
+   ```
+
+4. Check Istio ingress gateway:
+   ```bash
+   kubectl get pods -n istio-system -l istio=ingress
+   ```
+
+### Port Mismatch
+
+Ensure the destination port in routes matches your service ports:
+```yaml
+destination:
+  port: 8080  # Must match service.spec.ports[].port
+```
 
 ## Project Structure
 
 ```
-src/main/
-├── java/com/shopifake/microservice/
-│   ├── Application.java
-│   └── config/
-│       └── CorsConfig.java
-└── resources/
-    ├── application.yml                     # Base config
-    ├── application-dev.yml                 # Development
-    ├── application-test.yml                # Testing
-    └── application-prod.yml                # Production
+shopifake-gateway/
+├── shopifake-gateway-chart/
+│   ├── Chart.yaml
+│   ├── values.yaml          # Main configuration
+│   └── templates/
+│       ├── gateway.yaml     # Istio Gateway resource
+│       ├── virtualservice.yaml  # Istio VirtualService resource
+│       ├── destinationrule.yaml # Optional: for A/B testing
+│       └── ...
+└── README.md
 ```
+
+## References
+
+- [Istio Gateway Documentation](https://istio.io/latest/docs/reference/config/networking/gateway/)
+- [Istio VirtualService Documentation](https://istio.io/latest/docs/reference/config/networking/virtual-service/)

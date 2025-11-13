@@ -48,7 +48,7 @@ spec:
             host: {{ $fullName }}
             subset: v2
           weight: {{ .Values.abTesting.v2Weight }}
-    {{- else }}
+    {{- else if .Values.gateway.defaultRoute.enabled }}
     - name: gateway-default
       match:
         - uri:
