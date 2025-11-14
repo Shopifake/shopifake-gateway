@@ -1,0 +1,46 @@
+{{- if and .Values.gateway.enabled .Values.gateway.routes }}
+{{- $fullName := include "shopifake-gateway-chart.fullname" . }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "shopifake-gateway-chart.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - {{ .Values.gateway.host | default "*" | quote }}
+  gateways:
+    - {{ $fullName }}
+  http:
+    {{- range .Values.gateway.routes }}
+    - name: {{ .name }}
+      {{- with .match }}
+      match:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .rewrite }}
+      rewrite:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ .destination.host }}
+            {{- with .destination.port }}
+            port:
+              number: {{ . }}
+            {{- end }}
+    {{- end }}
+    {{- if .Values.gateway.defaultRoute.enabled }}
+    # Catch-all route for unmatched paths - returns 404
+    # This route must be last to only match requests that don't match any other route
+    - name: default-route
+      match:
+        - uri:
+            prefix: /
+      directResponse:
+        status: 404
+        body:
+          string: {{ .Values.gateway.defaultRoute.message | default "404 Not Found: The requested path does not exist." | quote }}
+    {{- end }}
+{{- end }}
+

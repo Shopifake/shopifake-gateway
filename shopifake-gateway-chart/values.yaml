@@ -1,17 +1,5 @@
-# Default values for chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
-
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  repository: ghcr.io/shopifake/shopifake-gateway
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -52,28 +40,28 @@ securityContext: {}
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: NodePort
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  type: ClusterIP
   port: 8080
-
-  nodePort: 30080
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
-  enabled: false
-  className: ""
+  enabled: true
+  className: "traefik"  # Traefik ingress controller
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+    # For Traefik annotations (if needed):
+    # traefik.ingress.kubernetes.io/router.entrypoints: web
+    # For Let's Encrypt with cert-manager (if installed):
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  backendService:
+    name: "istio-ingress"
+    port: 80
+    namespace: "shopifake-sandbox"
   hosts:
-    - host: chart-example.local
+    - host: shopifake.axel-trepout.fr 
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 # -- Expose the service via gateway-api HTTPRoute
 # Requires Gateway API resources and suitable controller installed within the cluster
@@ -128,11 +116,11 @@ resources: {}
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 livenessProbe:
   httpGet:
-    path: /actuator/health/liveness
+    path: /
     port: http
 readinessProbe:
   httpGet:
-    path: /actuator/health/readiness
+    path: /
     port: http
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
@@ -161,3 +149,118 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+nameOverride: "gateway"
+
+gateway:
+  enabled: true
+  host: "*"               # accepte toutes les requêtes pour test
+  port:
+    number: 80            # port exposé par Istio ingress
+    name: http
+    protocol: HTTP
+  selector:
+    istio: ingress          # correspond à ton pod istio-ingress
+  routes:
+    - name: shopifake-access
+      match:
+        - uri:
+            prefix: /access
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-access
+        port: 8080
+    - name: shopifake-audit
+      match:
+        - uri:
+            prefix: /audit
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-audit
+        port: 8080
+    - name: shopifake-catalog
+      match:
+        - uri:
+            prefix: /catalog
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-catalog
+        port: 8080
+    - name: shopifake-chatbot
+      match:
+        - uri:
+            prefix: /chatbot
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-chatbot
+        port: 8080
+    - name: shopifake-customers
+      match:
+        - uri:
+            prefix: /customers
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-customers
+        port: 8080
+    - name: shopifake-inventory
+      match:
+        - uri:
+            prefix: /inventory
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-inventory
+        port: 8080
+    - name: shopifake-orders
+      match:
+        - uri:
+            prefix: /orders
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-orders
+        port: 8080
+    - name: shopifake-pricing
+      match:
+        - uri:
+            prefix: /pricing
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-pricing
+        port: 8080
+    - name: shopifake-recommender
+      match:
+        - uri:
+            prefix: /recommender
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-recommender
+        port: 8080
+    - name: shopifake-sales-dashboard
+      match:
+        - uri:
+            prefix: /sales-dashboard
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-sales-dashboard
+        port: 8080
+    - name: shopifake-sites
+      match:
+        - uri:
+            prefix: /sites
+      rewrite:
+        uri: /
+      destination:
+        host: shopifake-sites
+        port: 8080
+  defaultRoute:
+    enabled: true
+    message: "404 Not Found: The requested path does not exist."

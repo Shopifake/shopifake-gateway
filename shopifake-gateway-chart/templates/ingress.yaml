@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "shopifake-gateway-chart.fullname" . }}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "shopifake-gateway-chart.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -35,9 +35,12 @@ spec:
             {{- end }}
             backend:
               service:
-                name: {{ include "chart.fullname" $ }}
+                name: {{ if and $.Values.ingress.backendService $.Values.ingress.backendService.name }}{{ $.Values.ingress.backendService.name }}{{ else }}{{ include "shopifake-gateway-chart.fullname" $ }}{{ end }}
+                {{- if and $.Values.ingress.backendService $.Values.ingress.backendService.namespace }}
+                namespace: {{ $.Values.ingress.backendService.namespace }}
+                {{- end }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  number: {{ if and $.Values.ingress.backendService $.Values.ingress.backendService.port }}{{ $.Values.ingress.backendService.port }}{{ else }}{{ $.Values.service.port }}{{ end }}
           {{- end }}
     {{- end }}
 {{- end }}
