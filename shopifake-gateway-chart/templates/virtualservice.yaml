@@ -1,62 +1,46 @@
-{{- if .Values.gateway.enabled }}
+{{- if and .Values.gateway.enabled .Values.gateway.routes }}
 {{- $fullName := include "shopifake-gateway-chart.fullname" . }}
-{{- $servicePort := .Values.service.port | default 80 }}
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: {{ $fullName }}
+  labels:
+    {{- include "shopifake-gateway-chart.labels" . | nindent 4 }}
 spec:
   hosts:
-    - {{ .Values.gateway.host | quote }}
+    - {{ .Values.gateway.host | default "*" | quote }}
   gateways:
     - {{ $fullName }}
   http:
-    {{- range $index, $route := .Values.gateway.routes }}
-      {{- $matches := $route.match | default (list (dict "uri" (dict "prefix" "/"))) }}
-    {{- $destination := $route.destination | default (dict) }}
-    {{- $destHost := $destination.host | default $fullName }}
-    {{- $destPort := $destination.port | default $servicePort }}
-    - name: {{ default (printf "route-%d" (add $index 1)) $route.name }}
+    {{- range .Values.gateway.routes }}
+    - name: {{ .name }}
+      {{- with .match }}
       match:
-{{ toYaml $matches | indent 8 }}
-      {{- if $route.rewrite }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .rewrite }}
       rewrite:
-{{ toYaml $route.rewrite | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       route:
         - destination:
-            host: {{ $destHost }}
-            {{- with $destination.subset }}
-            subset: {{ . }}
-            {{- end }}
-            {{- if $destPort }}
+            host: {{ .destination.host }}
+            {{- with .destination.port }}
             port:
-              number: {{ $destPort }}
+              number: {{ . }}
             {{- end }}
-          {{- with $route.weight }}
-          weight: {{ . }}
-          {{- end }}
     {{- end }}
-    {{- if .Values.abTesting.enabled }}
-    - name: gateway-ab-test
-      route:
-        - destination:
-            host: {{ $fullName }}
-            subset: v1
-          weight: {{ .Values.abTesting.v1Weight }}
-        - destination:
-            host: {{ $fullName }}
-            subset: v2
-          weight: {{ .Values.abTesting.v2Weight }}
-    {{- else if .Values.gateway.defaultRoute.enabled }}
-    - name: gateway-default
+    {{- if .Values.gateway.defaultRoute.enabled }}
+    # Catch-all route for unmatched paths - returns 404
+    # This route must be last to only match requests that don't match any other route
+    - name: default-route
       match:
         - uri:
             prefix: /
-      route:
-        - destination:
-            host: {{ $fullName }}
-            port:
-              number: {{ $servicePort }}
+      directResponse:
+        status: 404
+        body:
+          string: {{ .Values.gateway.defaultRoute.message | default "404 Not Found: The requested path does not exist." | quote }}
     {{- end }}
 {{- end }}
+

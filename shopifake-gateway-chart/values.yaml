@@ -5,14 +5,6 @@
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
-# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  repository: ghcr.io/shopifake/shopifake-gateway
-  # This sets the pull policy for images.
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
-
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 # This is to override the chart name.
@@ -160,6 +152,8 @@ tolerations: []
 
 affinity: {}
 
+nameOverride: "gateway"
+
 gateway:
   enabled: true
   host: "*"               # accepte toutes les requêtes pour test
@@ -168,7 +162,7 @@ gateway:
     name: http
     protocol: HTTP
   selector:
-    istio: ingress        # correspond à ton pod istio-ingress
+    istio: ingress          # correspond à ton pod istio-ingress
   routes:
     - name: shopifake-access
       match:
@@ -269,9 +263,6 @@ gateway:
       destination:
         host: shopifake-sites
         port: 8080
-  # Default route for unmatched paths (routes to gateway service if it exists)
   defaultRoute:
-    enabled: false          # Set to true if you have a gateway service for unmatched paths
-
-abTesting:
-  enabled: false            # désactivé pour l'instant
+    enabled: true
+    message: "404 Not Found: The requested path does not exist. Available paths: /access, /audit, /catalog, /chatbot, /customers, /inventory, /orders, /pricing, /recommender, /sales-dashboard, /sites"

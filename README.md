@@ -55,6 +55,8 @@ gateway:
 ### 3. Deploy
 
 ```bash
+helm install istio-ingress istio/gateway -n shopifake-sandbox --wait
+
 helm install shopifake-gateway ./shopifake-gateway-chart \
   --namespace <your-namespace>
 ```
@@ -63,7 +65,7 @@ helm install shopifake-gateway ./shopifake-gateway-chart \
 
 ```bash
 # Check Gateway
-kubectl get gateway -n <your-namespace>
+kubectl get gateway -n <your-namespace> 
 
 # Check VirtualService
 kubectl get virtualservice -n <your-namespace>
