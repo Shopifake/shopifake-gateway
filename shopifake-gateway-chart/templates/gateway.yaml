@@ -11,10 +11,25 @@ spec:
     {{ $k }}: {{ $v }}
     {{- end }}
   servers:
+    # HTTP server
     - port:
         number: {{ .Values.gateway.port.number | default 80 }}
         name: {{ .Values.gateway.port.name | default "http" }}
         protocol: {{ .Values.gateway.port.protocol | default "HTTP" }}
       hosts:
         - {{ .Values.gateway.host | quote }}
+    {{- if and .Values.gateway.tls .Values.gateway.tls.enabled }}
+    # HTTPS/TLS server
+    - port:
+        number: {{ .Values.gateway.tls.port.number | default 443 }}
+        name: {{ .Values.gateway.tls.port.name | default "https" }}
+        protocol: {{ .Values.gateway.tls.port.protocol | default "HTTPS" }}
+      tls:
+        mode: {{ .Values.gateway.tls.mode | default "SIMPLE" }}
+        {{- if .Values.gateway.tls.credentialName }}
+        credentialName: {{ .Values.gateway.tls.credentialName }}
+        {{- end }}
+      hosts:
+        - {{ .Values.gateway.host | quote }}
+    {{- end }}
 {{- end }}

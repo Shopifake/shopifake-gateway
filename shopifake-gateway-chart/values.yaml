@@ -1,7 +1,3 @@
-# Default values for shopifake-gateway-chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
@@ -45,25 +41,27 @@ securityContext: {}
 service:
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   type: ClusterIP
-  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
-  enabled: false
-  className: ""
+  enabled: true
+  className: "traefik"  # Traefik ingress controller
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+    # For Traefik annotations (if needed):
+    # traefik.ingress.kubernetes.io/router.entrypoints: web
+    # For Let's Encrypt with cert-manager (if installed):
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  backendService:
+    name: "istio-ingress"
+    port: 80
+    namespace: "shopifake-sandbox"
   hosts:
-    - host: chart-example.local
+    - host: shopifake.axel-trepout.fr 
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 # -- Expose the service via gateway-api HTTPRoute
 # Requires Gateway API resources and suitable controller installed within the cluster

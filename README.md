@@ -55,7 +55,7 @@ gateway:
 ### 3. Deploy
 
 ```bash
-helm install istio-ingress istio/gateway -n shopifake-sandbox --wait
+helm install istio-ingress istio/gateway -n <your-namespace> --wait
 
 helm install shopifake-gateway ./shopifake-gateway-chart \
   --namespace <your-namespace>

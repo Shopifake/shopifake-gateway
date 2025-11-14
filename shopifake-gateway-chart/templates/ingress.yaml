@@ -35,9 +35,12 @@ spec:
             {{- end }}
             backend:
               service:
-                name: {{ include "shopifake-gateway-chart.fullname" $ }}
+                name: {{ if and $.Values.ingress.backendService $.Values.ingress.backendService.name }}{{ $.Values.ingress.backendService.name }}{{ else }}{{ include "shopifake-gateway-chart.fullname" $ }}{{ end }}
+                {{- if and $.Values.ingress.backendService $.Values.ingress.backendService.namespace }}
+                namespace: {{ $.Values.ingress.backendService.namespace }}
+                {{- end }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  number: {{ if and $.Values.ingress.backendService $.Values.ingress.backendService.port }}{{ $.Values.ingress.backendService.port }}{{ else }}{{ $.Values.service.port }}{{ end }}
           {{- end }}
     {{- end }}
 {{- end }}
