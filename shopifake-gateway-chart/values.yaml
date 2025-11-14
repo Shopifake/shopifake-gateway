@@ -263,4 +263,4 @@ gateway:
         port: 8080
   defaultRoute:
     enabled: true
-    message: "404 Not Found: The requested path does not exist. Available paths: /access, /audit, /catalog, /chatbot, /customers, /inventory, /orders, /pricing, /recommender, /sales-dashboard, /sites"
+    message: "404 Not Found: The requested path does not exist."
