@@ -40,6 +40,10 @@ services:
     url: http://localhost:8090
   chatbot:
     url: http://localhost:8091
+  auth-b2c:
+    url: http://localhost:3000
+  auth-b2e:
+    url: http://localhost:3001
 
 server:
   port: 8080

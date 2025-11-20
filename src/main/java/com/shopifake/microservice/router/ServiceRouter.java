@@ -48,6 +48,12 @@ public class ServiceRouter {
     @Value("${services.chatbot.url:http://localhost:8091}")
     private String chatbotServiceUrl;
 
+    @Value("${services.auth-b2c.url:http://localhost:3000}")
+    private String authB2cServiceUrl;
+
+    @Value("${services.auth-b2e.url:http://localhost:3001}")
+    private String authB2eServiceUrl;
+
     /**
      * Configures all gateway routes for the Shopifake microservices.
      * Each route maps a path pattern to a backend service URL.
@@ -68,7 +74,9 @@ public class ServiceRouter {
                 Map.entry("recommender", recommenderServiceUrl),
                 Map.entry("sales-dashboard", salesDashboardServiceUrl),
                 Map.entry("sites", sitesServiceUrl),
-                Map.entry("chatbot", chatbotServiceUrl)
+                Map.entry("chatbot", chatbotServiceUrl),
+                Map.entry("auth-b2c", authB2cServiceUrl),
+                Map.entry("auth-b2e", authB2eServiceUrl)
         );
 
         RouteLocatorBuilder.Builder routesBuilder = builder.routes();
