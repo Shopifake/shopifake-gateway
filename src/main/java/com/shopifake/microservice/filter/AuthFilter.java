@@ -39,7 +39,11 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
         super(Config.class);
     }
 
-    public static class Config {}
+    public static class Config {
+        // Empty constructor required for GraalVM native build
+        public Config() {
+        }
+    }
 
     @Override
     public GatewayFilter apply(Config config) {
