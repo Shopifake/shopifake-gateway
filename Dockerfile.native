@@ -1,0 +1,7 @@
+FROM debian:12-slim AS prod
+WORKDIR /app
+COPY target/shopifake-gateway /app/application
+EXPOSE 8080
+ENV SPRING_PROFILES_ACTIVE=prod
+ENTRYPOINT ["/app/application"]
+
