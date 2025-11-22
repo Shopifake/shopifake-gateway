@@ -12,3 +12,5 @@ logging:
   level:
     root: WARN
     com.shopifake.microservice: INFO
+
+security.jwt.secret: testsecretkeytestsecretkeytestsecretkey
