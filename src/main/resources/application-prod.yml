@@ -5,6 +5,35 @@ server:
     include-stacktrace: never
     include-message: never
 
+# Services URLs for Kubernetes (can be overridden via env vars)
+services:
+  access:
+    url: ${SERVICE_ACCESS_URL:http://shopifake-access:8080}
+  audit:
+    url: ${SERVICE_AUDIT_URL:http://shopifake-audit:8080}
+  catalog:
+    url: ${SERVICE_CATALOG_URL:http://shopifake-catalog:8080}
+  customers:
+    url: ${SERVICE_CUSTOMERS_URL:http://shopifake-customers:8080}
+  inventory:
+    url: ${SERVICE_INVENTORY_URL:http://shopifake-inventory:8080}
+  orders:
+    url: ${SERVICE_ORDERS_URL:http://shopifake-orders:8080}
+  pricing:
+    url: ${SERVICE_PRICING_URL:http://shopifake-pricing:8080}
+  recommender:
+    url: ${SERVICE_RECOMMENDER_URL:http://shopifake-recommender:8080}
+  sales-dashboard:
+    url: ${SERVICE_SALES_DASHBOARD_URL:http://shopifake-sales-dashboard:8080}
+  sites:
+    url: ${SERVICE_SITES_URL:http://shopifake-sites:8080}
+  chatbot:
+    url: ${SERVICE_CHATBOT_URL:http://shopifake-chatbot:8080}
+  auth-b2c:
+    url: ${SERVICE_AUTH_B2C_URL:http://shopifake-auth-b2c:3000}
+  auth-b2e:
+    url: ${SERVICE_AUTH_B2E_URL:http://shopifake-auth-b2e:3001}
+
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
   allowed-methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
@@ -15,11 +44,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus,gateway
   endpoint:
     health:
-      show-details: when-authorized
-
+      show-details: always
+      probes:
+        enabled: true
 logging:
   level:
     root: WARN
