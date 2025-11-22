@@ -16,6 +16,38 @@ spring:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
+      # --- PROTECTED ROUTES ---
+      routes:
+        # B2E Authentication Service Route (no custom security filter)
+        - id: auth_b2e_route
+          uri: ${services.auth-b2e.url}
+          predicates:
+            - Path=/api/auth/b2e/**
+          filters:
+            - RewritePath=/api/auth/b2e/(?<segment>.*), /api/auth/$\{segment}
+
+        # Protected microservices routes (with custom security filter)
+        - id: catalog_route
+          uri: ${services.catalog.url}
+          predicates:
+            - Path=/api/catalog/**
+          filters:
+            - RewritePath=/api/catalog/(?<segment>.*), /$\{segment}
+            - name: AuthFilter 
+
+        - id: inventory_route
+          uri: ${services.inventory.url}
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - RewritePath=/api/inventory/(?<segment>.*), /$\{segment}
+            - name: AuthFilter
+
+security:
+  jwt:
+    secret: ${BETTER_AUTH_SECRET}
+
+
 # Microservices URLs
 services:
   access:
