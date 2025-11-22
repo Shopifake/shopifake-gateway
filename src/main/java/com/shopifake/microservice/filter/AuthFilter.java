@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -22,6 +23,7 @@ import java.security.Key;
  * by the destination microservice.
  */
 @Component
+@RegisterReflectionForBinding(AuthFilter.Config.class)
 public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> {
 
     // Secret key used for token signature, retrieved from application.yml
