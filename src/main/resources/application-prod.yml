@@ -50,6 +50,10 @@ management:
       show-details: always
       probes:
         enabled: true
+  metrics:
+    export:
+      otlp:
+        url: ${OTLP_METRICS_URL}
 logging:
   level:
     root: WARN
