@@ -85,7 +85,6 @@ public class ServiceRouter {
             routesBuilder.route(serviceName + "-service", r -> r
                     .path("/api/" + serviceName + "/**")
                     .filters(f -> f
-                            .stripPrefix(2)
                             .addRequestHeader("X-Gateway-Source", "shopifake-gateway"))
                     .uri(serviceUrl))
         );
