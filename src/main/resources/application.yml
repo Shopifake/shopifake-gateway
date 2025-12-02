@@ -83,15 +83,18 @@ management:
       enabled: true
     java:
       enabled: true
-  metrics:
-    export:
-      otlp:
-        url: ${OTLP_METRICS_URL}
+  otlp:
+    metrics:
+      export:
+          url: http://otel-collector:4318/v1/metrics
+          enabled: true
 
 # Logging configuration
 logging:
   level:
     root: INFO
     com.shopifake.microservice: INFO
+    io.micrometer: DEBUG
+    org.springframework.boot.actuate: DEBUG
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: INFO

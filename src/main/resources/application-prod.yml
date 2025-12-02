@@ -50,10 +50,12 @@ management:
       show-details: always
       probes:
         enabled: true
-  metrics:
-    export:
-      otlp:
-        url: ${OTLP_METRICS_URL}
+  otlp:
+    metrics:
+      export:
+          url: http://otel-collector:4318/v1/metrics
+          enabled: true
+
 logging:
   level:
     root: WARN
