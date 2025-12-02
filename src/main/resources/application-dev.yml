@@ -21,11 +21,6 @@ management:
       show-details: always
       probes:
         enabled: true
-  otlp:
-    metrics:
-      export:
-          url: http://otel-collector:4318/v1/metrics
-          enabled: true
 
 cors:
   allowed-origins: "*"

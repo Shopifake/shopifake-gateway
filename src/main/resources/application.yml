@@ -83,11 +83,6 @@ management:
       enabled: true
     java:
       enabled: true
-  otlp:
-    metrics:
-      export:
-          url: http://otel-collector:4318/v1/metrics
-          enabled: true
 
 # Logging configuration
 logging:
