@@ -70,7 +70,7 @@ public class ServiceRouter {
                 Map.entry("customers", customersServiceUrl),
                 Map.entry("inventory", inventoryServiceUrl),
                 Map.entry("orders", ordersServiceUrl),
-                Map.entry("pricing", pricingServiceUrl),
+                Map.entry("prices", pricingServiceUrl),
                 Map.entry("recommender", recommenderServiceUrl),
                 Map.entry("sales-dashboard", salesDashboardServiceUrl),
                 Map.entry("sites", sitesServiceUrl),
