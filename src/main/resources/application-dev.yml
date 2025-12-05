@@ -11,6 +11,17 @@ spring:
 server:
   port: ${PORT:8080}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
 cors:
   allowed-origins: "*"
   allowed-methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
@@ -21,3 +32,5 @@ logging:
   level:
     root: INFO
     com.shopifake.microservice: DEBUG
+    io.micrometer: DEBUG
+    org.springframework.boot.actuate: DEBUG

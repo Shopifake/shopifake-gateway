@@ -54,6 +54,9 @@ public class ServiceRouter {
     @Value("${services.auth-b2e.url:http://localhost:3001}")
     private String authB2eServiceUrl;
 
+    @Value("${server.port:8080}")
+    private int serverPort;
+
     /**
      * Configures all gateway routes for the Shopifake microservices.
      * Each route maps a path pattern to a backend service URL.
@@ -70,7 +73,7 @@ public class ServiceRouter {
                 Map.entry("customers", customersServiceUrl),
                 Map.entry("inventory", inventoryServiceUrl),
                 Map.entry("orders", ordersServiceUrl),
-                Map.entry("pricing", pricingServiceUrl),
+                Map.entry("prices", pricingServiceUrl),
                 Map.entry("recommender", recommenderServiceUrl),
                 Map.entry("sales-dashboard", salesDashboardServiceUrl),
                 Map.entry("sites", sitesServiceUrl),
@@ -85,10 +88,14 @@ public class ServiceRouter {
             routesBuilder.route(serviceName + "-service", r -> r
                     .path("/api/" + serviceName + "/**")
                     .filters(f -> f
-                            .stripPrefix(2)
                             .addRequestHeader("X-Gateway-Source", "shopifake-gateway"))
                     .uri(serviceUrl))
         );
+
+        routesBuilder.route("gateway-actuator", r -> r
+            .path("/api/actuator/**")
+            .filters(f -> f.stripPrefix(1))   // removes /api
+            .uri("http://localhost:" + serverPort));
 
         return routesBuilder.build();
     }
